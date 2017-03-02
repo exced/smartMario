@@ -5,10 +5,13 @@ var kPieceWidth = 50;
 var kPieceHeight = 50;
 var kPixelWidth = 1 + (nbRows * kPieceWidth);
 var kPixelHeight = 1 + (nbCols * kPieceHeight);
+var gameEnded = false;
 // characters positions
 var currentPosition = { column: 0, row: 0 };
 var nbMushrooms = 10;
 var mushrooms = [];
+var pathUser = [];
+var pathRobot = [];
 var gContext;
 
 if (window.addEventListener) { // Mozilla, Netscape, Firefox
@@ -23,38 +26,47 @@ function isInsideGrid(position) {
 }
 
 function drawCharacters(position) {
-    // draw
-    gContext.strokeStyle = "#000";
-    gContext.stroke();
-
     var imgMario = new Image();
     imgMario.onload = function () {
         // transform row / column to grid coords
-        var x = (position.column * kPieceWidth) + (kPieceWidth / 2);
-        var y = (position.row * kPieceHeight) + (kPieceHeight / 2);        
-        gContext.drawImage(imgMario, x-(kPieceWidth/2), y-(kPieceHeight/2), kPieceWidth , kPieceHeight)
+        var x = (position.column * kPieceWidth);
+        var y = (position.row * kPieceHeight);
+        gContext.drawImage(imgMario, x, y, kPieceWidth, kPieceHeight)
     }
     imgMario.src = "./assets/mario.png";
 
     var imgPeach = new Image();
     imgPeach.onload = function () {
-        var xPeach = ((nbRows-1) * kPieceWidth) + (kPieceWidth / 2);
-        var yPeach = ((nbCols-1) * kPieceHeight) + (kPieceHeight / 2);   
-        gContext.drawImage(imgPeach, xPeach-(kPieceWidth/2), yPeach-(kPieceHeight/2), kPieceWidth , kPieceHeight)
+        var xPeach = ((nbRows - 1) * kPieceWidth);
+        var yPeach = ((nbCols - 1) * kPieceHeight);
+        gContext.drawImage(imgPeach, xPeach, yPeach, kPieceWidth, kPieceHeight)
     }
     imgPeach.src = "./assets/peach.png";
 
     var imgMushroom = new Image();
     imgMushroom.onload = function () {
         mushrooms
-        .map(function (pos) {
-            var xMushroom = (pos.row * kPieceWidth) + (kPieceWidth / 2);
-            var yMushroom = (pos.column * kPieceHeight) + (kPieceHeight / 2);                
-            gContext.drawImage(imgMushroom, xMushroom-(kPieceWidth/2), yMushroom-(kPieceHeight/2), kPieceWidth , kPieceHeight)
-        })
-        
+            .map(function (pos) {
+                var xMushroom = (pos.column * kPieceWidth);
+                var yMushroom = (pos.row * kPieceHeight);
+                gContext.drawImage(imgMushroom, xMushroom, yMushroom, kPieceWidth, kPieceHeight)
+            })
     }
-    imgMushroom.src = "./assets/mushroom.png";      
+    imgMushroom.src = "./assets/mushroom.png";
+}
+
+function drawPath(path) {
+    console.log("called");
+    gContext.clearRect(0, 0, kPixelWidth, kPixelHeight); 
+    //gContext.fillStyle = 'black';
+    //gContext.fillRect(0, 0, kPieceWidth, kPieceHeight);
+    /*
+    path
+    .map(function(pos) {
+        gContext.fillStyle='black';
+        gContext.fillRect(pos.column, pos.row, kPieceWidth, kPieceHeight);
+    })
+    */
 }
 
 function drawBoard() {
@@ -70,55 +82,75 @@ function drawBoard() {
         gContext.moveTo(0, 0.5 + y);
         gContext.lineTo(kPixelWidth, 0.5 + y);
     }
+    gContext.closePath();
     /* draw */
-    gContext.strokeStyle = "#ccc";
+    gContext.strokeStyle = 'blue';
     gContext.stroke();
     drawCharacters(currentPosition);
 }
 
 document.addEventListener("keydown", function (e) {
-    var newPosition = { column: 0, row: 0 };
-    newPosition.column = currentPosition.column;
-    newPosition.row = currentPosition.row;
-    if (e.keyCode == 65) { // A
-        newPosition.column -= 1;
+    if (!gameEnded) {
+        var newPosition = { column: 0, row: 0 };
+        newPosition.column = currentPosition.column;
+        newPosition.row = currentPosition.row;
+        if (e.keyCode == 65) { // A
+            newPosition.column -= 1;
+        }
+        if (e.keyCode == 68) { // D
+            newPosition.column += 1;
+        }
+        if (e.keyCode == 87) { // W
+            newPosition.row -= 1;
+        }
+        if (e.keyCode == 83) { // S
+            newPosition.row += 1;
+        }
+        if (newPosition.column == nbCols - 1 && newPosition.row == nbRows - 1) { // End of the game
+            endGame();
+        }
+        if (isInsideGrid(newPosition)) {
+            mushrooms =
+                mushrooms
+                    .filter(function (position) {
+                        return (position.column != newPosition.column || position.row != newPosition.row);
+                    })
+            currentPosition = newPosition;
+            pathUser.push(newPosition);
+        }
+        drawBoard();
     }
-    if (e.keyCode == 68) { // D
-        newPosition.column += 1;
-    }
-    if (e.keyCode == 87) { // W
-        newPosition.row -= 1;
-    }
-    if (e.keyCode == 83) { // S
-        newPosition.row += 1;
-    }
-    if (isInsideGrid(newPosition)) {
-        currentPosition = newPosition;
-    }
-    drawBoard();
 }, false);
+
+function computeBestPath() {
+
+}
 
 function getRandomIntInclusive(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min +1)) + min;
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function endGame() {
+    console.log("End");
+    gameEnded = true;
+    drawPath(pathUser);
+    //drawPath(pathRobot, null);
+    //drawResults();
 }
 
 function WindowLoad(event) {
+    gameEnded = false;
     // generate random mushrooms
     for (var i = 0; i < nbMushrooms; i++) {
-        mushrooms.push({column: getRandomIntInclusive(0, nbCols-1), row: getRandomIntInclusive(0, nbRows-1)});
+        mushrooms.push({ column: getRandomIntInclusive(0, nbCols - 1), row: getRandomIntInclusive(0, nbRows - 1) });
     }
 
-    var canvas = document.createElement('canvas');
-
-    canvas.id = 'canvas';
+    var canvas = document.getElementById('canvas');
     canvas.width = kPixelWidth;
     canvas.height = kPixelHeight;
-
-    document.body.appendChild(canvas);
     var context = canvas.getContext("2d");
     gContext = context;
-
     drawBoard();
 }        
