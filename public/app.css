@@ -1,0 +1,26 @@
+body {
+    padding-top: 50px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+canvas .default {
+    border: 1px solid black;
+}
+
+canvas .active {
+    border: 1px solid red;
+}
+
+div .feedback {
+    color: red;
+    font-size: 1.0em;
+}
+
+canvas {
+    background: #fff;
+    margin: 20px;
+}
