@@ -1,17 +1,16 @@
 // board description
-var nbRows = 3;
+var nbRows = 9;
 var nbCols = nbRows; // squared grid : n x n
-var kPieceWidth = 50;
-var kPieceHeight = 50;
+var kPieceWidth = ~~((screen.availHeight - 250) / nbCols);
+var kPieceHeight = ~~((screen.availHeight - 250) / nbRows);
 var kPixelWidth = 1 + (nbRows * kPieceWidth);
 var kPixelHeight = 1 + (nbCols * kPieceHeight);
 // characters positions
-var currentPosition = { column: 0, row: 0 };
-var nbMushrooms = 3;
+var initPos = { column: 0, row: 0 };
+var currentPosition = initPos;
+var nbMushrooms = 6;
 var mushroomsCopy = [];
-var pathUser = [currentPosition];
-// results
-var maxMushrooms = 0;
+var pathUser = [initPos];
 var gContext;
 
 var game = new Vue({
@@ -33,7 +32,10 @@ var game = new Vue({
         },
         win: function() {
             return this.gameEnded && (mushroomsCopy.length - this.mushrooms.length >= this.robotMushrooms);
-        }          
+        },
+        loose: function() {
+            return this.gameEnded && !(mushroomsCopy.length - this.mushrooms.length >= this.robotMushrooms);
+        }                     
     }
 });
 
@@ -106,6 +108,7 @@ function drawResults() {
             })
     }
     imgMushroomR.src = "./assets/red.png";
+    /* green mushrooms */
     var imgMushroomG = new Image();
     imgMushroomG.onload = function () {
         mushroomsCopy.filter(function(e){
@@ -118,7 +121,6 @@ function drawResults() {
         })
     }
     imgMushroomG.src = "./assets/green.png";       
-    /* green mushrooms */
     /* pathUser */
     pathUser
     .map(function(pos) {
@@ -160,9 +162,7 @@ function drawBoard() {
 
 document.addEventListener("keydown", function (e) {
     if (!game.gameEnded) {
-        var newPosition = { column: 0, row: 0 };
-        newPosition.column = currentPosition.column;
-        newPosition.row = currentPosition.row;
+        var newPosition = {column: currentPosition.column, row: currentPosition.row};
         if (e.keyCode == 68 || e.keyCode == 39) { // D or Right
             newPosition.column += 1;
         }
@@ -200,7 +200,7 @@ function microPath(e1, e2) {
 }
 
 /*
- * biggest path with movements constraints : Down and Right
+ * biggest path with moves constraints : Down and Right
  */
 function possibleLength(arr) {
     if (arr.length <= 1) {
@@ -279,6 +279,8 @@ function startTimer(duration) {
 }
 
 function newGame() {
+    currentPosition = initPos;
+    pathUser = [initPos];
     game.mushrooms = [];
     currentPosition = { column: 0, row: 0 };
     game.gameEnded = false;
