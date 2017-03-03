@@ -1,17 +1,35 @@
 // board description
-var nbRows = 9;
-var nbCols = 9;
+var nbRows = 3;
+var nbCols = nbRows; // squared grid : n x n
 var kPieceWidth = 50;
 var kPieceHeight = 50;
 var kPixelWidth = 1 + (nbRows * kPieceWidth);
 var kPixelHeight = 1 + (nbCols * kPieceHeight);
-var gameEnded = false;
 // characters positions
 var currentPosition = { column: 0, row: 0 };
-var nbMushrooms = 10;
-var mushrooms = [];
+var nbMushrooms = 3;
+var mushroomsCopy = [];
 var pathUser = [currentPosition];
+// results
+var maxMushrooms = 0;
 var gContext;
+
+var game = new Vue({
+    el: '#scores',
+    data: {
+        mushrooms: [],
+        timer: '',
+        gameEnded: false,
+        robotMushrooms: 0
+    },
+    computed: {                          
+    },
+    methods: {
+        nbMushrooms: function() {
+            return this.mushrooms.length;
+        }                
+    }
+});
 
 if (window.addEventListener) { // Mozilla, Netscape, Firefox
     window.addEventListener('load', WindowLoad, false);
@@ -44,7 +62,7 @@ function drawCharacters(position) {
 
     var imgMushroom = new Image();
     imgMushroom.onload = function () {
-        mushrooms
+        game.mushrooms
             .map(function (pos) {
                 var xMushroom = (pos.column * kPieceWidth);
                 var yMushroom = (pos.row * kPieceHeight);
@@ -54,7 +72,7 @@ function drawCharacters(position) {
     imgMushroom.src = "./assets/mushroom.png";
 }
 
-function drawPaths() {
+function drawResults() {
     gContext.clearRect(0, 0, kPixelWidth, kPixelHeight);
     gContext.beginPath();
     /* vertical lines */
@@ -77,15 +95,15 @@ function drawPaths() {
         var x = (pos.column * kPieceWidth);
         var y = (pos.row * kPieceHeight);        
         gContext.fillRect(x, y, kPieceWidth, kPieceHeight);
-    })
-
-    bestPath([], {column: 0, row: 0})
+    });
+    var best = bestPath();
+    best
     .map(function(pos) {
         gContext.fillStyle = 'rgba(237,3,34,0.5)';
         var x = (pos.column * kPieceWidth);
         var y = (pos.row * kPieceHeight);        
         gContext.fillRect(x, y, kPieceWidth, kPieceHeight);
-    })    
+    });  
 }
 
 function drawBoard() {
@@ -109,18 +127,12 @@ function drawBoard() {
 }
 
 document.addEventListener("keydown", function (e) {
-    if (!gameEnded) {
+    if (!game.gameEnded) {
         var newPosition = { column: 0, row: 0 };
         newPosition.column = currentPosition.column;
         newPosition.row = currentPosition.row;
-        if (e.keyCode == 65 || e.keyCode == 37) { // A or Left
-            newPosition.column -= 1;
-        }
         if (e.keyCode == 68 || e.keyCode == 39) { // D or Right
             newPosition.column += 1;
-        }
-        if (e.keyCode == 87 || e.keyCode == 38) { // W or Up
-            newPosition.row -= 1;
         }
         if (e.keyCode == 83 || e.keyCode == 40) { // S or Down
             newPosition.row += 1;
@@ -129,11 +141,11 @@ document.addEventListener("keydown", function (e) {
             endGame();
         }
         if (isInsideGrid(newPosition)) {
-            mushrooms =
-                mushrooms
-                    .filter(function (position) {
-                        return (position.column != newPosition.column || position.row != newPosition.row);
-                    })
+            game.mushrooms =
+                game.mushrooms
+                .filter(function (position) {
+                    return (position.column != newPosition.column || position.row != newPosition.row);
+                })
             currentPosition = newPosition;
             pathUser.push(newPosition);
         }
@@ -141,28 +153,68 @@ document.addEventListener("keydown", function (e) {
     }
 }, false);
 
-function rowMushrooms(row) {
-    var res = [];
-    mushrooms
-    .map(function(e, i, arr){
-        if (e.row == row){
-            res.push(e);
-        }
-    })
-    return res;
+/*
+ * path from e1 to e2
+ */
+function microPath(e1, e2) {
+    var path = [];
+    for (var i = 1; i <= e2.column-e1.column; i++) {
+        path.push({column:e1.column+i, row:e1.row});
+    }
+    for (var i = 1; i <= e2.row-e1.row; i++) {
+        path.push({column:e2.column, row:e1.row+i});
+    }
+    return path;
 }
 
-function bestPath(path, currPos) {
-    if (currPos.column == nbCols-1 && currPos.row == nbRows-1) {
-        return path
+/*
+ * biggest path with movements constraints : Down and Right
+ */
+function possibleLength(arr) {
+    if (arr.length <= 1) {
+        return 1;
     }
-    for (var i = 0 ; i < nbCols; i++) {
-        if (rowMushrooms(i) >= 1) {
-
+    for (var i = 1; i < arr.length; i++) {
+        if (!(arr[i].column >= arr[i-1].column && arr[i].row >= arr[i-1].row)) {
+            return i;
         }
-        bestPath(path, )
     }
-    return path
+    return arr.length;
+}
+
+function permutate(arr) {
+    return arr
+    .reduce(function permute(res, item, key, arr) {
+        return res.concat(arr.length > 1 && arr.slice(0, key).concat(arr.slice(key + 1))
+            .reduce(permute, [])
+            .map(function(perm) {
+                return [item].concat(perm);
+        }) || item);
+    }, []);
+}
+
+function bestPath() {
+    var path = [{column:0, row:0}];
+    var max = {length: 0, path: []};
+    var perm = permutate(mushroomsCopy);
+    for (var i = 0; i < perm.length; i++) {
+        var pLength = possibleLength(perm[i]);
+        if (pLength == perm[i].length) {
+            max = {length: pLength, path: perm[i]};
+            break;
+        }
+        if (pLength > max.length) {
+            max = {length: pLength, path: perm[i].slice(0,pLength)};
+        }
+    }
+    game.robotMushrooms = max.length;
+    var curr = path[0];
+    for (var i = 0; i < max.length; i++) {
+        path.push(microPath(curr, max.path[i]));
+        curr = max.path[i];
+    }
+    path.push(microPath(curr, {column:nbCols-1, row:nbRows-1}));
+    return [].concat(...path);
 }
 
 function getRandomIntInclusive(min, max) {
@@ -173,17 +225,48 @@ function getRandomIntInclusive(min, max) {
 
 function endGame() {
     console.log("End");
-    drawPaths();
-    //drawResults();
-    gameEnded = true;
+    drawResults();
+    game.gameEnded = true;
+}
+
+function startTimer(duration) {
+    var timer = duration, minutes, seconds;
+    var t = setInterval(function () {
+        minutes = parseInt(timer / 60, 10)
+        seconds = parseInt(timer % 60, 10);
+
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        game.timer = minutes + ":" + seconds;
+
+        if (--timer < 0) {
+            clearInterval(t);
+            endGame();
+        }
+    }, 1000);
 }
 
 function WindowLoad(event) {
-    gameEnded = false;
+    game.gameEnded = false;
+    // timer
+    startTimer(nbRows);
+
     // generate random mushrooms
     for (var i = 0; i < nbMushrooms; i++) {
-        mushrooms.push({ column: getRandomIntInclusive(0, nbCols - 1), row: getRandomIntInclusive(0, nbRows - 1) });
+        var rand;
+        do { // Not on Mario or Peach
+            rand = {column: getRandomIntInclusive(0, nbCols - 1), row: getRandomIntInclusive(0, nbRows - 1)};  
+        } while ((rand.column == nbCols-1 && rand.row == nbRows-1) || (rand.column == 0 && rand.row == 0))
+        game.mushrooms.push({column: rand.column, row: rand.row});
     }
+    // remove duplicates
+    game.mushrooms = game.mushrooms.filter(function(e,i,self){
+        return self.findIndex(function(p){
+            return p.row === e.row && p.column === e.column; 
+        }) === i;
+    })
+    mushroomsCopy = game.mushrooms;
 
     var canvas = document.getElementById('canvas');
     canvas.width = kPixelWidth;
@@ -192,7 +275,7 @@ function WindowLoad(event) {
     gContext = context;
 
     document.getElementById('clear').addEventListener('click', function() {
-        drawPaths();
+        drawResults();
     }, false);
 
     drawBoard();
