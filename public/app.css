@@ -7,6 +7,15 @@ body {
     padding: 0;
 }
 
+.main {
+    margin-top: 25px;
+}
+
+/* StatusMessage */
+#statusMessage{
+    text-align: center;
+}
+
 canvas .default {
     border: 1px solid black;
 }
@@ -21,6 +30,8 @@ div .feedback {
 }
 
 canvas {
+    padding: 0;
+    margin: auto;
+    display: block;
     background: #fff;
-    margin: 20px;
 }

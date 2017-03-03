@@ -22,12 +22,18 @@ var game = new Vue({
         gameEnded: false,
         robotMushrooms: 0
     },
-    computed: {                          
+    computed: {                        
     },
     methods: {
         nbMushrooms: function() {
-            return this.mushrooms.length;
-        }                
+            return mushroomsCopy.length - this.mushrooms.length;
+        },
+        newGame: function() {
+            newGame();
+        },
+        win: function() {
+            return this.gameEnded && (mushroomsCopy.length - this.mushrooms.length >= this.robotMushrooms);
+        }          
     }
 });
 
@@ -63,13 +69,13 @@ function drawCharacters(position) {
     var imgMushroom = new Image();
     imgMushroom.onload = function () {
         game.mushrooms
-            .map(function (pos) {
-                var xMushroom = (pos.column * kPieceWidth);
-                var yMushroom = (pos.row * kPieceHeight);
-                gContext.drawImage(imgMushroom, xMushroom, yMushroom, kPieceWidth, kPieceHeight)
-            })
+        .map(function (pos) {
+            var xMushroom = (pos.column * kPieceWidth);
+            var yMushroom = (pos.row * kPieceHeight);
+            gContext.drawImage(imgMushroom, xMushroom, yMushroom, kPieceWidth, kPieceHeight)
+        })
     }
-    imgMushroom.src = "./assets/mushroom.png";
+    imgMushroom.src = "./assets/red.png";
 }
 
 function drawResults() {
@@ -88,7 +94,32 @@ function drawResults() {
     gContext.closePath();
     /* draw */
     gContext.strokeStyle = 'black';
-    gContext.stroke();    
+    gContext.stroke();   
+    /* red mushrooms */
+    var imgMushroomR = new Image();
+    imgMushroomR.onload = function () {
+        game.mushrooms
+            .map(function (pos) {
+                var xMushroom = (pos.column * kPieceWidth);
+                var yMushroom = (pos.row * kPieceHeight);
+                gContext.drawImage(imgMushroomR, xMushroom, yMushroom, kPieceWidth, kPieceHeight)
+            })
+    }
+    imgMushroomR.src = "./assets/red.png";
+    var imgMushroomG = new Image();
+    imgMushroomG.onload = function () {
+        mushroomsCopy.filter(function(e){
+            return game.mushrooms.indexOf(e) < 0;
+        })
+        .map(function (pos) {
+            var xMushroom = (pos.column * kPieceWidth);
+            var yMushroom = (pos.row * kPieceHeight);
+            gContext.drawImage(imgMushroomG, xMushroom, yMushroom, kPieceWidth, kPieceHeight)
+        })
+    }
+    imgMushroomG.src = "./assets/green.png";       
+    /* green mushrooms */
+    /* pathUser */
     pathUser
     .map(function(pos) {
         gContext.fillStyle = 'rgba(71,156,242,0.5)';
@@ -96,6 +127,7 @@ function drawResults() {
         var y = (pos.row * kPieceHeight);        
         gContext.fillRect(x, y, kPieceWidth, kPieceHeight);
     });
+    /* pathRobot */
     var best = bestPath();
     best
     .map(function(pos) {
@@ -224,7 +256,6 @@ function getRandomIntInclusive(min, max) {
 }
 
 function endGame() {
-    console.log("End");
     drawResults();
     game.gameEnded = true;
 }
@@ -240,14 +271,16 @@ function startTimer(duration) {
 
         game.timer = minutes + ":" + seconds;
 
-        if (--timer < 0) {
+        if (--timer < 0 || game.gameEnded) {
             clearInterval(t);
             endGame();
         }
     }, 1000);
 }
 
-function WindowLoad(event) {
+function newGame() {
+    game.mushrooms = [];
+    currentPosition = { column: 0, row: 0 };
     game.gameEnded = false;
     // timer
     startTimer(nbRows);
@@ -274,9 +307,9 @@ function WindowLoad(event) {
     var context = canvas.getContext("2d");
     gContext = context;
 
-    document.getElementById('clear').addEventListener('click', function() {
-        drawResults();
-    }, false);
+    drawBoard(); 
+}
 
-    drawBoard();
+function WindowLoad(event) {
+    newGame();
 }        
