@@ -1,5 +1,5 @@
 // board description
-var nbRows = 9;
+var nbRows = 3;
 var nbCols = nbRows; // squared grid : n x n
 var kPieceWidth = ~~((screen.availHeight - 250) / nbCols);
 var kPieceHeight = ~~((screen.availHeight - 250) / nbRows);
@@ -8,7 +8,7 @@ var kPixelHeight = 1 + (nbCols * kPieceHeight);
 // characters positions
 var initPos = { column: 0, row: 0 };
 var currentPosition = initPos;
-var nbMushrooms = 6;
+var nbMushrooms = 3;
 var mushroomsCopy = [];
 var pathUser = [initPos];
 var gContext;
@@ -185,68 +185,66 @@ document.addEventListener("keydown", function (e) {
     }
 }, false);
 
-/*
- * path from e1 to e2
- */
-function microPath(e1, e2) {
-    var path = [];
-    for (var i = 1; i <= e2.column-e1.column; i++) {
-        path.push({column:e1.column+i, row:e1.row});
-    }
-    for (var i = 1; i <= e2.row-e1.row; i++) {
-        path.push({column:e2.column, row:e1.row+i});
-    }
-    return path;
-}
-
-/*
- * biggest path with moves constraints : Down and Right
- */
-function possibleLength(arr) {
-    if (arr.length <= 1) {
-        return 1;
-    }
-    for (var i = 1; i < arr.length; i++) {
-        if (!(arr[i].column >= arr[i-1].column && arr[i].row >= arr[i-1].row)) {
-            return i;
+function nbAccessible(col, row) {
+    var nb = 0;
+    mushroomsCopy
+    .map(function(e,i,arr){
+        if (e.column >= col && e.row >= row) {
+            nb++
         }
-    }
-    return arr.length;
-}
-
-function permutate(arr) {
-    return arr
-    .reduce(function permute(res, item, key, arr) {
-        return res.concat(arr.length > 1 && arr.slice(0, key).concat(arr.slice(key + 1))
-            .reduce(permute, [])
-            .map(function(perm) {
-                return [item].concat(perm);
-        }) || item);
-    }, []);
+    })
+    return nb;
 }
 
 function bestPath() {
-    var path = [{column:0, row:0}];
-    var max = {length: 0, path: []};
-    var perm = permutate(mushroomsCopy);
-    for (var i = 0; i < perm.length; i++) {
-        var pLength = possibleLength(perm[i]);
-        if (pLength == perm[i].length) {
-            max = {length: pLength, path: perm[i]};
-            break;
+    var path = [];
+    var maxLength = Math.max(nbCols, nbRows);
+    var temp;
+    var max = 0;
+    var borders = [];
+    var border = [];
+    for (var k = 0; k <= 2 * (maxLength - 1); ++k) {
+        temp = [];
+        for (var y = nbCols - 1; y >= 0; --y) {
+            var x = k - y;
+            if (x >= 0 && x < nbRows) {
+                temp.push({data: nbAccessible(x, y), column: x, row: y});
+            }
         }
-        if (pLength > max.length) {
-            max = {length: pLength, path: perm[i].slice(0,pLength)};
+        border = [];
+        /* find the max */
+        max = temp[0];
+        temp
+        .map(function(e, i, arr){
+            if (e.data > max.data) {
+                max = e;
+            }
+        });
+        /* get all max : border */
+        temp
+        .map(function(e, i, arr){
+            if (e.data == max.data) {
+                border.push(e);
+            }
+        });
+        borders.push(border);
+        max--;
+    }
+    var locked = borders[0][0];
+    path.push(locked);
+    borders
+    .map(function(e, i, arr){
+        for (var i = 0; i < e.length; i++) {
+            if (e[i].column >= locked.column && e[i].row >= locked.row) {
+                locked = e[i];
+                path.push(locked);
+                break;
+            }
         }
-    }
-    game.robotMushrooms = max.length;
-    var curr = path[0];
-    for (var i = 0; i < max.length; i++) {
-        path.push(microPath(curr, max.path[i]));
-        curr = max.path[i];
-    }
-    path.push(microPath(curr, {column:nbCols-1, row:nbRows-1}));
-    return [].concat(...path);
+    })
+    path.push({column: nbCols-1, row: nbRows-1});
+    game.robotMushrooms = path.length;
+    return path;
 }
 
 function getRandomIntInclusive(min, max) {
