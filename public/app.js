@@ -19,7 +19,8 @@ var game = new Vue({
         mushrooms: [],
         timer: '',
         gameEnded: false,
-        robotMushrooms: 0
+        robotMushrooms: 0,
+        pathAlgo: 'brute'
     },
     computed: {                        
     },
@@ -130,14 +131,33 @@ function drawResults() {
         gContext.fillRect(x, y, kPieceWidth, kPieceHeight);
     });
     /* pathRobot */
-    var best = bestPath();
+    var best;
+    if (game.pathAlgo === 'brute') {
+        best = bruteforce();
+    }
+    if (game.pathAlgo === 'greedy') {
+        best = greedySearch();
+    }    
+    /* score */
+    var robotScore = 0;
+    best
+    .map(function(e1, i1, arr1){
+        mushroomsCopy
+        .map(function(e2, i2, arr2){
+            if (e2.column == e1.column && e2.row == e1.row) {
+                robotScore++;
+            }
+        })
+    })
+    game.robotMushrooms = robotScore;
+    /* path */
     best
     .map(function(pos) {
         gContext.fillStyle = 'rgba(237,3,34,0.5)';
         var x = (pos.column * kPieceWidth);
         var y = (pos.row * kPieceHeight);        
         gContext.fillRect(x, y, kPieceWidth, kPieceHeight);
-    });  
+    });
 }
 
 function drawBoard() {
@@ -196,7 +216,7 @@ function nbAccessible(col, row) {
     return nb;
 }
 
-function bestPath() {
+function greedySearch() {
     var path = [];
     var maxLength = Math.max(nbCols, nbRows);
     var temp;
@@ -231,7 +251,6 @@ function bestPath() {
         max--;
     }
     var locked = borders[0][0];
-    path.push(locked);
     borders
     .map(function(e, i, arr){
         for (var i = 0; i < e.length; i++) {
@@ -242,9 +261,71 @@ function bestPath() {
             }
         }
     })
-    path.push({column: nbCols-1, row: nbRows-1});
-    game.robotMushrooms = path.length;
     return path;
+}
+
+/*
+ * path from e1 to e2
+ */
+function microPath(e1, e2) {
+    var path = [];
+    for (var i = 1; i <= e2.column-e1.column; i++) {
+        path.push({column:e1.column+i, row:e1.row});
+    }
+    for (var i = 1; i <= e2.row-e1.row; i++) {
+        path.push({column:e2.column, row:e1.row+i});
+    }
+    return path;
+}
+
+/*
+ * biggest path with movements constraints : Down and Right
+ */
+function possibleLength(arr) {
+    if (arr.length <= 1) {
+        return 1;
+    }
+    for (var i = 1; i < arr.length; i++) {
+        if (!(arr[i].column >= arr[i-1].column && arr[i].row >= arr[i-1].row)) {
+            return i;
+        }
+    }
+    return arr.length;
+}
+
+function permutate(arr) {
+    return arr
+    .reduce(function permute(res, item, key, arr) {
+        return res.concat(arr.length > 1 && arr.slice(0, key).concat(arr.slice(key + 1))
+            .reduce(permute, [])
+            .map(function(perm) {
+                return [item].concat(perm);
+        }) || item);
+    }, []);
+}
+
+function bruteforce() {
+    var path = [{column:0, row:0}];
+    var max = {length: 0, path: []};
+    var perm = permutate(mushroomsCopy);
+    for (var i = 0; i < perm.length; i++) {
+        var pLength = possibleLength(perm[i]);
+        if (pLength == perm[i].length) {
+            max = {length: pLength, path: perm[i]};
+            break;
+        }
+        if (pLength > max.length) {
+            max = {length: pLength, path: perm[i].slice(0,pLength)};
+        }
+    }
+    game.robotMushrooms = max.length;
+    var curr = path[0];
+    for (var i = 0; i < max.length; i++) {
+        path.push(microPath(curr, max.path[i]));
+        curr = max.path[i];
+    }
+    path.push(microPath(curr, {column:nbCols-1, row:nbRows-1}));
+    return [].concat(...path);
 }
 
 function getRandomIntInclusive(min, max) {

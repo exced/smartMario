@@ -18,6 +18,11 @@
         <div id="scores">
             <div class="row well well-lg" id="statusMessage">
                 <div class="col-md-4">
+                    <input type="radio" id="brute" value="brute" v-model="pathAlgo">
+                    <label for="one">bruteforce</label><br>
+                    <input type="radio" id="greedy" value="greedy" v-model="pathAlgo">
+                    <label for="two">greedy search</label><br>
+
                     <h1 v-if="win()"> YOU WIN </h1>
                     <h1 v-if="loose()"> YOU LOOSE </h1>
                 </div>
