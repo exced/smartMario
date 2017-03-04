@@ -1,22 +1,31 @@
-// board description
-var nbRows = 3;
-var nbCols = nbRows; // squared grid : n x n
-var kPieceWidth = ~~((screen.availHeight - 250) / nbCols);
-var kPieceHeight = ~~((screen.availHeight - 250) / nbRows);
-var kPixelWidth = 1 + (nbRows * kPieceWidth);
-var kPixelHeight = 1 + (nbCols * kPieceHeight);
-// characters positions
+Vue.config.debug = true;
+
 var initPos = { column: 0, row: 0 };
 var currentPosition = initPos;
-var nbMushrooms = 3;
 var mushroomsCopy = [];
 var pathUser = [initPos];
 var gContext;
+var height = screen.availHeight;
+// init
+var nRows = 5;
+var nCols = 5;
+var kPW = ~~((height - 250) / nCols);
+var kPH = ~~((height - 250) / nRows);
+var kPiW = 1 + (nCols * this.kPW);
+var kPiH = 1 + (nRows * this.kPH);
 
 var game = new Vue({
     el: '#scores',
     data: {
+        // board description
+        nbRows: nRows,
+        nbCols: nCols,
+        nbMushrooms: 8,
         mushrooms: [],
+        kPieceWidth: kPW,
+        kPieceHeight: kPH,
+        kPixelWidth: kPiW,
+        kPixelHeight: kPiH,
         timer: '',
         gameEnded: false,
         robotMushrooms: 0,
@@ -25,7 +34,7 @@ var game = new Vue({
     computed: {                        
     },
     methods: {
-        nbMushrooms: function() {
+        score: function() {
             return mushroomsCopy.length - this.mushrooms.length;
         },
         newGame: function() {
@@ -36,7 +45,14 @@ var game = new Vue({
         },
         loose: function() {
             return this.gameEnded && !(mushroomsCopy.length - this.mushrooms.length >= this.robotMushrooms);
-        }                     
+        },
+        updateGrid: function() {
+            this.kPieceWidth = ~~((height - 250) / this.nbCols);
+            this.kPieceHeight = ~~((height - 250) / this.nbRows);
+            this.kPixelWidth = 1 + (this.nbRows * this.kPieceWidth);
+            this.kPixelHeight = 1 + (this.nbCols * this.kPieceHeight);
+            newGame();
+        }                                
     }
 });
 
@@ -48,24 +64,24 @@ else if (window.attachEvent) { // IE
 }
 
 function isInsideGrid(position) {
-    return (position.row >= 0 && position.row < nbRows) && (position.column >= 0 && position.column < nbCols);
+    return (position.row >= 0 && position.row < game.nbRows) && (position.column >= 0 && position.column < game.nbCols);
 }
 
 function drawCharacters(position) {
     var imgMario = new Image();
     imgMario.onload = function () {
         // transform row / column to grid coords
-        var x = (position.column * kPieceWidth);
-        var y = (position.row * kPieceHeight);
-        gContext.drawImage(imgMario, x, y, kPieceWidth, kPieceHeight)
+        var x = (position.column * game.kPieceWidth);
+        var y = (position.row * game.kPieceHeight);
+        gContext.drawImage(imgMario, x, y, game.kPieceWidth, game.kPieceHeight)
     }
     imgMario.src = "./assets/mario.png";
 
     var imgPeach = new Image();
     imgPeach.onload = function () {
-        var xPeach = ((nbRows - 1) * kPieceWidth);
-        var yPeach = ((nbCols - 1) * kPieceHeight);
-        gContext.drawImage(imgPeach, xPeach, yPeach, kPieceWidth, kPieceHeight)
+        var xPeach = ((game.nbRows - 1) * game.kPieceWidth);
+        var yPeach = ((game.nbCols - 1) * game.kPieceHeight);
+        gContext.drawImage(imgPeach, xPeach, yPeach, game.kPieceWidth, game.kPieceHeight)
     }
     imgPeach.src = "./assets/peach.png";
 
@@ -73,26 +89,26 @@ function drawCharacters(position) {
     imgMushroom.onload = function () {
         game.mushrooms
         .map(function (pos) {
-            var xMushroom = (pos.column * kPieceWidth);
-            var yMushroom = (pos.row * kPieceHeight);
-            gContext.drawImage(imgMushroom, xMushroom, yMushroom, kPieceWidth, kPieceHeight)
+            var xMushroom = (pos.column * game.kPieceWidth);
+            var yMushroom = (pos.row * game.kPieceHeight);
+            gContext.drawImage(imgMushroom, xMushroom, yMushroom, game.kPieceWidth, game.kPieceHeight)
         })
     }
     imgMushroom.src = "./assets/red.png";
 }
 
 function drawResults() {
-    gContext.clearRect(0, 0, kPixelWidth, kPixelHeight);
+    gContext.clearRect(0, 0, game.kPixelWidth, game.kPixelHeight);
     gContext.beginPath();
     /* vertical lines */
-    for (var x = 0; x <= kPixelWidth; x += kPieceWidth) {
+    for (var x = 0; x <= game.kPixelWidth; x += game.kPieceWidth) {
         gContext.moveTo(0.5 + x, 0);
-        gContext.lineTo(0.5 + x, kPixelHeight);
+        gContext.lineTo(0.5 + x, game.kPixelHeight);
     }
     /* horizontal lines */
-    for (var y = 0; y <= kPixelHeight; y += kPieceHeight) {
+    for (var y = 0; y <= game.kPixelHeight; y += game.kPieceHeight) {
         gContext.moveTo(0, 0.5 + y);
-        gContext.lineTo(kPixelWidth, 0.5 + y);
+        gContext.lineTo(game.kPixelWidth, 0.5 + y);
     }
     gContext.closePath();
     /* draw */
@@ -103,9 +119,9 @@ function drawResults() {
     imgMushroomR.onload = function () {
         game.mushrooms
             .map(function (pos) {
-                var xMushroom = (pos.column * kPieceWidth);
-                var yMushroom = (pos.row * kPieceHeight);
-                gContext.drawImage(imgMushroomR, xMushroom, yMushroom, kPieceWidth, kPieceHeight)
+                var xMushroom = (pos.column * game.kPieceWidth);
+                var yMushroom = (pos.row * game.kPieceHeight);
+                gContext.drawImage(imgMushroomR, xMushroom, yMushroom, game.kPieceWidth, game.kPieceHeight)
             })
     }
     imgMushroomR.src = "./assets/red.png";
@@ -116,9 +132,9 @@ function drawResults() {
             return game.mushrooms.indexOf(e) < 0;
         })
         .map(function (pos) {
-            var xMushroom = (pos.column * kPieceWidth);
-            var yMushroom = (pos.row * kPieceHeight);
-            gContext.drawImage(imgMushroomG, xMushroom, yMushroom, kPieceWidth, kPieceHeight)
+            var xMushroom = (pos.column * game.kPieceWidth);
+            var yMushroom = (pos.row * game.kPieceHeight);
+            gContext.drawImage(imgMushroomG, xMushroom, yMushroom, game.kPieceWidth, game.kPieceHeight)
         })
     }
     imgMushroomG.src = "./assets/green.png";       
@@ -126,18 +142,21 @@ function drawResults() {
     pathUser
     .map(function(pos) {
         gContext.fillStyle = 'rgba(71,156,242,0.5)';
-        var x = (pos.column * kPieceWidth);
-        var y = (pos.row * kPieceHeight);        
-        gContext.fillRect(x, y, kPieceWidth, kPieceHeight);
+        var x = (pos.column * game.kPieceWidth);
+        var y = (pos.row * game.kPieceHeight);        
+        gContext.fillRect(x, y, game.kPieceWidth, game.kPieceHeight);
     });
     /* pathRobot */
     var best;
     if (game.pathAlgo === 'brute') {
         best = bruteforce();
     }
-    if (game.pathAlgo === 'greedy') {
-        best = greedySearch();
+    if (game.pathAlgo === 'bfs') {
+        best = search('bfs');
     }    
+    if (game.pathAlgo === 'dfs') {
+        best = search('dfs');
+    }        
     /* score */
     var robotScore = 0;
     best
@@ -154,24 +173,24 @@ function drawResults() {
     best
     .map(function(pos) {
         gContext.fillStyle = 'rgba(237,3,34,0.5)';
-        var x = (pos.column * kPieceWidth);
-        var y = (pos.row * kPieceHeight);        
-        gContext.fillRect(x, y, kPieceWidth, kPieceHeight);
+        var x = (pos.column * game.kPieceWidth);
+        var y = (pos.row * game.kPieceHeight);        
+        gContext.fillRect(x, y, game.kPieceWidth, game.kPieceHeight);
     });
 }
 
 function drawBoard() {
-    gContext.clearRect(0, 0, kPixelWidth, kPixelHeight);
+    gContext.clearRect(0, 0, game.kPixelWidth, game.kPixelHeight);
     gContext.beginPath();
     /* vertical lines */
-    for (var x = 0; x <= kPixelWidth; x += kPieceWidth) {
+    for (var x = 0; x <= game.kPixelWidth; x += game.kPieceWidth) {
         gContext.moveTo(0.5 + x, 0);
-        gContext.lineTo(0.5 + x, kPixelHeight);
+        gContext.lineTo(0.5 + x, game.kPixelHeight);
     }
     /* horizontal lines */
-    for (var y = 0; y <= kPixelHeight; y += kPieceHeight) {
+    for (var y = 0; y <= game.kPixelHeight; y += game.kPieceHeight) {
         gContext.moveTo(0, 0.5 + y);
-        gContext.lineTo(kPixelWidth, 0.5 + y);
+        gContext.lineTo(game.kPixelWidth, 0.5 + y);
     }
     gContext.closePath();
     /* draw */
@@ -189,7 +208,7 @@ document.addEventListener("keydown", function (e) {
         if (e.keyCode == 83 || e.keyCode == 40) { // S or Down
             newPosition.row += 1;
         }     
-        if (newPosition.column == nbCols - 1 && newPosition.row == nbRows - 1) { // End of the game
+        if (newPosition.column == game.nbCols - 1 && newPosition.row == game.nbRows - 1) { // End of the game
             endGame();
         }
         if (isInsideGrid(newPosition)) {
@@ -216,18 +235,18 @@ function nbAccessible(col, row) {
     return nb;
 }
 
-function greedySearch() {
+function search(strat) {
     var path = [];
-    var maxLength = Math.max(nbCols, nbRows);
+    var maxLength = Math.max(game.nbCols, game.nbRows);
     var temp;
     var max = 0;
     var borders = [];
     var border = [];
     for (var k = 0; k <= 2 * (maxLength - 1); ++k) {
         temp = [];
-        for (var y = nbCols - 1; y >= 0; --y) {
+        for (var y = game.nbCols - 1; y >= 0; --y) {
             var x = k - y;
-            if (x >= 0 && x < nbRows) {
+            if (x >= 0 && x < game.nbRows) {
                 temp.push({data: nbAccessible(x, y), column: x, row: y});
             }
         }
@@ -251,16 +270,21 @@ function greedySearch() {
         max--;
     }
     var locked = borders[0][0];
-    borders
-    .map(function(e, i, arr){
-        for (var i = 0; i < e.length; i++) {
-            if (e[i].column >= locked.column && e[i].row >= locked.row) {
-                locked = e[i];
-                path.push(locked);
-                break;
+    if (strat === 'dfs') {
+        borders
+        .map(function(e, i, arr){
+            for (var i = 0; i < e.length; i++) {
+                if (e[i].column >= locked.column && e[i].row >= locked.row) {
+                    locked = e[i];
+                    path.push(locked);
+                    break;
+                }
             }
-        }
-    })
+        })
+    }
+    if (strat === 'bfs') {
+        console.log('BFS todo');
+    }    
     return path;
 }
 
@@ -324,7 +348,7 @@ function bruteforce() {
         path.push(microPath(curr, max.path[i]));
         curr = max.path[i];
     }
-    path.push(microPath(curr, {column:nbCols-1, row:nbRows-1}));
+    path.push(microPath(curr, {column:game.nbCols-1, row:game.nbRows-1}));
     return [].concat(...path);
 }
 
@@ -364,14 +388,14 @@ function newGame() {
     currentPosition = { column: 0, row: 0 };
     game.gameEnded = false;
     // timer
-    startTimer(nbRows);
+    startTimer(game.nbRows);
 
     // generate random mushrooms
-    for (var i = 0; i < nbMushrooms; i++) {
+    for (var i = 0; i < game.nbMushrooms; i++) {
         var rand;
         do { // Not on Mario or Peach
-            rand = {column: getRandomIntInclusive(0, nbCols - 1), row: getRandomIntInclusive(0, nbRows - 1)};  
-        } while ((rand.column == nbCols-1 && rand.row == nbRows-1) || (rand.column == 0 && rand.row == 0))
+            rand = {column: getRandomIntInclusive(0, game.nbCols - 1), row: getRandomIntInclusive(0, game.nbRows - 1)};  
+        } while ((rand.column == game.nbCols-1 && rand.row == game.nbRows-1) || (rand.column == 0 && rand.row == 0))
         game.mushrooms.push({column: rand.column, row: rand.row});
     }
     // remove duplicates
@@ -383,8 +407,8 @@ function newGame() {
     mushroomsCopy = game.mushrooms;
 
     var canvas = document.getElementById('canvas');
-    canvas.width = kPixelWidth;
-    canvas.height = kPixelHeight;
+    canvas.width = game.kPixelWidth;
+    canvas.height = game.kPixelHeight;
     var context = canvas.getContext("2d");
     gContext = context;
 

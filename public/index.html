@@ -19,22 +19,26 @@
             <div class="row well well-lg" id="statusMessage">
                 <div class="col-md-4">
                     <input type="radio" id="brute" value="brute" v-model="pathAlgo">
-                    <label for="one">bruteforce</label><br>
-                    <input type="radio" id="greedy" value="greedy" v-model="pathAlgo">
-                    <label for="two">greedy search</label><br>
-
-                    <h1 v-if="win()"> YOU WIN </h1>
-                    <h1 v-if="loose()"> YOU LOOSE </h1>
+                    <label for="brute">bruteforce</label><br>
+                    <input type="radio" id="dfs" value="dfs" v-model="pathAlgo">
+                    <label for="dfs">DFS</label><br>
+                    <input type="radio" id="bfs" value="bfs" v-model="pathAlgo">
+                    <label for="bfs">BFS</label><br>
+                    nbRows<input v-model="nbRows" v-on:keyup.enter="updateGrid()" placeholder="nb rows"><br>
+                    nbCols<input v-model="nbCols" v-on:keyup.enter="updateGrid()" placeholder="nb cols"><br>
+                    nbMushrooms<input v-model="nbMushrooms" v-on:keyup.enter="updateGrid()" placeholder="nb mushrooms"><br>
                 </div>
                 <div class="col-md-4">
                     <h2>timer: {{timer}}</h2>
-                    <h3>score: {{nbMushrooms()}}</h3>
+                    <h3>score: {{score()}}</h3>
                     <h3 v-if="gameEnded">robotScore: {{robotMushrooms}}</h3>
                     <button v-if="gameEnded" @click="newGame()" type="button" class="btn btn-success">New Game</button>
                 </div>
                 <div class="col-md-4">
                     <h4 v-if="gameEnded" style="color: rgba(71,156,242,0.5)">user path</h4>
                     <h4 v-if="gameEnded" style="color: rgba(237,3,34,0.5)">robot path</h4>
+                    <h1 v-if="win()"> YOU WIN </h1>
+                    <h1 v-if="loose()"> YOU LOOSE </h1>                    
                 </div>                
             </div>
             <div class="jumbotron animated">
