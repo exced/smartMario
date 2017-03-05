@@ -1,4 +1,4 @@
-Vue.config.debug = true;
+// Vue.config.debug = true;
 
 var initPos = { column: 0, row: 0 };
 var currentPosition = initPos;
@@ -241,7 +241,6 @@ function search(strat) {
     }
     /* score */
     game.robotScore = matrix[0][0];
-    console.log(JSON.stringify(matrix));
     /* find the path */
     var curr = { column: 0, row: 0 };
     path.push({ column: 0, row: 0 });
@@ -261,7 +260,6 @@ function search(strat) {
         }
         path.push({ column: curr.column, row: curr.row });
     }
-    console.log("PATH ", JSON.stringify(path));
     return path;
 }
 
