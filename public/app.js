@@ -7,8 +7,9 @@ var pathUser = [initPos];
 var gContext;
 var height = screen.availHeight;
 // init
-var nRows = 4;
-var nCols = 4;
+var nRows = 10;
+var nCols = 10;
+var nMush = 15;
 var kPW = ~~((height - 250) / nCols);
 var kPH = ~~((height - 250) / nRows);
 var kPiW = 1 + (nCols * this.kPW);
@@ -20,7 +21,7 @@ var game = new Vue({
         // board description
         nbRows: nRows,
         nbCols: nCols,
-        nbMushrooms: 5,
+        nbMushrooms: nMush,
         mushrooms: [],
         kPieceWidth: kPW,
         kPieceHeight: kPH,
@@ -311,6 +312,7 @@ function newGame() {
             return p.row === e.row && p.column === e.column;
         }) === i;
     })
+
     mushroomsCopy = game.mushrooms;
     // canvas
     var canvas = document.getElementById('canvas');
