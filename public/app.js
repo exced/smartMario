@@ -212,7 +212,7 @@ function zero2D(rows, cols) {
 function search(strat) {
     var path = [];
     var matrix = zero2D(game.nbRows, game.nbCols);
-    game.mushrooms
+    mushroomsCopy
         .map(function (e, i, arr) {
             matrix[e.row][e.column]++;
         });
