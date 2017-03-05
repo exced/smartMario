@@ -7,8 +7,8 @@ var pathUser = [initPos];
 var gContext;
 var height = screen.availHeight;
 // init
-var nRows = 5;
-var nCols = 5;
+var nRows = 4;
+var nCols = 4;
 var kPW = ~~((height - 250) / nCols);
 var kPH = ~~((height - 250) / nRows);
 var kPiW = 1 + (nCols * this.kPW);
@@ -20,7 +20,7 @@ var game = new Vue({
         // board description
         nbRows: nRows,
         nbCols: nCols,
-        nbMushrooms: 8,
+        nbMushrooms: 5,
         mushrooms: [],
         kPieceWidth: kPW,
         kPieceHeight: kPH,
@@ -28,31 +28,30 @@ var game = new Vue({
         kPixelHeight: kPiH,
         timer: '',
         gameEnded: false,
-        robotMushrooms: 0,
-        pathAlgo: 'brute'
+        robotScore: 0
     },
-    computed: {                        
+    computed: {
     },
     methods: {
-        score: function() {
+        score: function () {
             return mushroomsCopy.length - this.mushrooms.length;
         },
-        newGame: function() {
+        newGame: function () {
             newGame();
         },
-        win: function() {
-            return this.gameEnded && (mushroomsCopy.length - this.mushrooms.length >= this.robotMushrooms);
+        win: function () {
+            return this.gameEnded && (mushroomsCopy.length - this.mushrooms.length >= this.robotScore);
         },
-        loose: function() {
-            return this.gameEnded && !(mushroomsCopy.length - this.mushrooms.length >= this.robotMushrooms);
+        loose: function () {
+            return this.gameEnded && !(mushroomsCopy.length - this.mushrooms.length >= this.robotScore);
         },
-        updateGrid: function() {
+        updateGrid: function () {
             this.kPieceWidth = ~~((height - 250) / this.nbCols);
             this.kPieceHeight = ~~((height - 250) / this.nbRows);
             this.kPixelWidth = 1 + (this.nbRows * this.kPieceWidth);
             this.kPixelHeight = 1 + (this.nbCols * this.kPieceHeight);
             newGame();
-        }                                
+        }
     }
 });
 
@@ -88,11 +87,11 @@ function drawCharacters(position) {
     var imgMushroom = new Image();
     imgMushroom.onload = function () {
         game.mushrooms
-        .map(function (pos) {
-            var xMushroom = (pos.column * game.kPieceWidth);
-            var yMushroom = (pos.row * game.kPieceHeight);
-            gContext.drawImage(imgMushroom, xMushroom, yMushroom, game.kPieceWidth, game.kPieceHeight)
-        })
+            .map(function (pos) {
+                var xMushroom = (pos.column * game.kPieceWidth);
+                var yMushroom = (pos.row * game.kPieceHeight);
+                gContext.drawImage(imgMushroom, xMushroom, yMushroom, game.kPieceWidth, game.kPieceHeight)
+            })
     }
     imgMushroom.src = "./assets/red.png";
 }
@@ -113,7 +112,7 @@ function drawResults() {
     gContext.closePath();
     /* draw */
     gContext.strokeStyle = 'black';
-    gContext.stroke();   
+    gContext.stroke();
     /* red mushrooms */
     var imgMushroomR = new Image();
     imgMushroomR.onload = function () {
@@ -128,55 +127,34 @@ function drawResults() {
     /* green mushrooms */
     var imgMushroomG = new Image();
     imgMushroomG.onload = function () {
-        mushroomsCopy.filter(function(e){
+        mushroomsCopy.filter(function (e) {
             return game.mushrooms.indexOf(e) < 0;
         })
-        .map(function (pos) {
-            var xMushroom = (pos.column * game.kPieceWidth);
-            var yMushroom = (pos.row * game.kPieceHeight);
-            gContext.drawImage(imgMushroomG, xMushroom, yMushroom, game.kPieceWidth, game.kPieceHeight)
-        })
+            .map(function (pos) {
+                var xMushroom = (pos.column * game.kPieceWidth);
+                var yMushroom = (pos.row * game.kPieceHeight);
+                gContext.drawImage(imgMushroomG, xMushroom, yMushroom, game.kPieceWidth, game.kPieceHeight)
+            })
     }
-    imgMushroomG.src = "./assets/green.png";       
+    imgMushroomG.src = "./assets/green.png";
     /* pathUser */
     pathUser
-    .map(function(pos) {
-        gContext.fillStyle = 'rgba(71,156,242,0.5)';
-        var x = (pos.column * game.kPieceWidth);
-        var y = (pos.row * game.kPieceHeight);        
-        gContext.fillRect(x, y, game.kPieceWidth, game.kPieceHeight);
-    });
+        .map(function (pos) {
+            gContext.fillStyle = 'rgba(71,156,242,0.5)';
+            var x = (pos.column * game.kPieceWidth);
+            var y = (pos.row * game.kPieceHeight);
+            gContext.fillRect(x, y, game.kPieceWidth, game.kPieceHeight);
+        });
     /* pathRobot */
-    var best;
-    if (game.pathAlgo === 'brute') {
-        best = bruteforce();
-    }
-    if (game.pathAlgo === 'bfs') {
-        best = search('bfs');
-    }    
-    if (game.pathAlgo === 'dfs') {
-        best = search('dfs');
-    }        
-    /* score */
-    var robotScore = 0;
-    best
-    .map(function(e1, i1, arr1){
-        mushroomsCopy
-        .map(function(e2, i2, arr2){
-            if (e2.column == e1.column && e2.row == e1.row) {
-                robotScore++;
-            }
-        })
-    })
-    game.robotMushrooms = robotScore;
+    var robotPath = search();
     /* path */
-    best
-    .map(function(pos) {
-        gContext.fillStyle = 'rgba(237,3,34,0.5)';
-        var x = (pos.column * game.kPieceWidth);
-        var y = (pos.row * game.kPieceHeight);        
-        gContext.fillRect(x, y, game.kPieceWidth, game.kPieceHeight);
-    });
+    robotPath
+        .map(function (pos) {
+            gContext.fillStyle = 'rgba(237,3,34,0.5)';
+            var x = (pos.column * game.kPieceWidth);
+            var y = (pos.row * game.kPieceHeight);
+            gContext.fillRect(x, y, game.kPieceWidth, game.kPieceHeight);
+        });
 }
 
 function drawBoard() {
@@ -201,22 +179,22 @@ function drawBoard() {
 
 document.addEventListener("keydown", function (e) {
     if (!game.gameEnded) {
-        var newPosition = {column: currentPosition.column, row: currentPosition.row};
+        var newPosition = { column: currentPosition.column, row: currentPosition.row };
         if (e.keyCode == 68 || e.keyCode == 39) { // D or Right
             newPosition.column += 1;
         }
         if (e.keyCode == 83 || e.keyCode == 40) { // S or Down
             newPosition.row += 1;
-        }     
+        }
         if (newPosition.column == game.nbCols - 1 && newPosition.row == game.nbRows - 1) { // End of the game
             endGame();
         }
         if (isInsideGrid(newPosition)) {
             game.mushrooms =
                 game.mushrooms
-                .filter(function (position) {
-                    return (position.column != newPosition.column || position.row != newPosition.row);
-                })
+                    .filter(function (position) {
+                        return (position.column != newPosition.column || position.row != newPosition.row);
+                    })
             currentPosition = newPosition;
             pathUser.push(newPosition);
         }
@@ -224,132 +202,67 @@ document.addEventListener("keydown", function (e) {
     }
 }, false);
 
-function nbAccessible(col, row) {
-    var nb = 0;
-    mushroomsCopy
-    .map(function(e,i,arr){
-        if (e.column >= col && e.row >= row) {
-            nb++
-        }
-    })
-    return nb;
+function zero2D(rows, cols) {
+    var array = [], row = [];
+    while (cols--) row.push(0);
+    while (rows--) array.push(row.slice());
+    return array;
 }
 
 function search(strat) {
     var path = [];
+    var matrix = zero2D(game.nbRows, game.nbCols);
+    game.mushrooms
+        .map(function (e, i, arr) {
+            matrix[e.row][e.column]++;
+        });
     var maxLength = Math.max(game.nbCols, game.nbRows);
     var temp;
     var max = 0;
     var borders = [];
     var border = [];
-    for (var k = 0; k <= 2 * (maxLength - 1); ++k) {
-        temp = [];
+    /* mark matrix from end to begin */
+    for (var k = 2 * (maxLength - 1); k >= 0; k--) {
         for (var y = game.nbCols - 1; y >= 0; --y) {
             var x = k - y;
             if (x >= 0 && x < game.nbRows) {
-                temp.push({data: nbAccessible(x, y), column: x, row: y});
-            }
-        }
-        border = [];
-        /* find the max */
-        max = temp[0];
-        temp
-        .map(function(e, i, arr){
-            if (e.data > max.data) {
-                max = e;
-            }
-        });
-        /* get all max : border */
-        temp
-        .map(function(e, i, arr){
-            if (e.data == max.data) {
-                border.push(e);
-            }
-        });
-        borders.push(border);
-        max--;
-    }
-    var locked = borders[0][0];
-    if (strat === 'dfs') {
-        borders
-        .map(function(e, i, arr){
-            for (var i = 0; i < e.length; i++) {
-                if (e[i].column >= locked.column && e[i].row >= locked.row) {
-                    locked = e[i];
-                    path.push(locked);
-                    break;
+                var d = 0;
+                if (y != game.nbRows - 1) {
+                    d = matrix[y + 1][x];
                 }
+                if (x != game.nbCols - 1) {
+                    if (matrix[y][x + 1] > d) {
+                        d = matrix[y][x + 1];
+                    }
+                }
+                matrix[y][x] += d;
             }
-        })
+        }
     }
-    if (strat === 'bfs') {
-        console.log('BFS todo');
-    }    
+    /* score */
+    game.robotScore = matrix[0][0];
+    console.log(JSON.stringify(matrix));
+    /* find the path */
+    var curr = { column: 0, row: 0 };
+    path.push({ column: 0, row: 0 });
+    while (!(curr.column == game.nbCols - 1 && curr.row == game.nbRows - 1)) {
+        if (curr.row < game.nbRows - 1) {
+            if (curr.column < game.nbCols - 1) {
+                if (matrix[curr.row + 1][curr.column] >= matrix[curr.row][curr.column + 1]) {
+                    curr.row++;
+                } else {
+                    curr.column++;
+                }
+            } else {
+                curr.row++;
+            }
+        } else {
+            curr.column++;
+        }
+        path.push({ column: curr.column, row: curr.row });
+    }
+    console.log("PATH ", JSON.stringify(path));
     return path;
-}
-
-/*
- * path from e1 to e2
- */
-function microPath(e1, e2) {
-    var path = [];
-    for (var i = 1; i <= e2.column-e1.column; i++) {
-        path.push({column:e1.column+i, row:e1.row});
-    }
-    for (var i = 1; i <= e2.row-e1.row; i++) {
-        path.push({column:e2.column, row:e1.row+i});
-    }
-    return path;
-}
-
-/*
- * biggest path with movements constraints : Down and Right
- */
-function possibleLength(arr) {
-    if (arr.length <= 1) {
-        return 1;
-    }
-    for (var i = 1; i < arr.length; i++) {
-        if (!(arr[i].column >= arr[i-1].column && arr[i].row >= arr[i-1].row)) {
-            return i;
-        }
-    }
-    return arr.length;
-}
-
-function permutate(arr) {
-    return arr
-    .reduce(function permute(res, item, key, arr) {
-        return res.concat(arr.length > 1 && arr.slice(0, key).concat(arr.slice(key + 1))
-            .reduce(permute, [])
-            .map(function(perm) {
-                return [item].concat(perm);
-        }) || item);
-    }, []);
-}
-
-function bruteforce() {
-    var path = [{column:0, row:0}];
-    var max = {length: 0, path: []};
-    var perm = permutate(mushroomsCopy);
-    for (var i = 0; i < perm.length; i++) {
-        var pLength = possibleLength(perm[i]);
-        if (pLength == perm[i].length) {
-            max = {length: pLength, path: perm[i]};
-            break;
-        }
-        if (pLength > max.length) {
-            max = {length: pLength, path: perm[i].slice(0,pLength)};
-        }
-    }
-    game.robotMushrooms = max.length;
-    var curr = path[0];
-    for (var i = 0; i < max.length; i++) {
-        path.push(microPath(curr, max.path[i]));
-        curr = max.path[i];
-    }
-    path.push(microPath(curr, {column:game.nbCols-1, row:game.nbRows-1}));
-    return [].concat(...path);
 }
 
 function getRandomIntInclusive(min, max) {
@@ -368,12 +281,9 @@ function startTimer(duration) {
     var t = setInterval(function () {
         minutes = parseInt(timer / 60, 10)
         seconds = parseInt(timer % 60, 10);
-
         minutes = minutes < 10 ? "0" + minutes : minutes;
         seconds = seconds < 10 ? "0" + seconds : seconds;
-
         game.timer = minutes + ":" + seconds;
-
         if (--timer < 0 || game.gameEnded) {
             clearInterval(t);
             endGame();
@@ -389,30 +299,28 @@ function newGame() {
     game.gameEnded = false;
     // timer
     startTimer(game.nbRows);
-
     // generate random mushrooms
     for (var i = 0; i < game.nbMushrooms; i++) {
         var rand;
         do { // Not on Mario or Peach
-            rand = {column: getRandomIntInclusive(0, game.nbCols - 1), row: getRandomIntInclusive(0, game.nbRows - 1)};  
-        } while ((rand.column == game.nbCols-1 && rand.row == game.nbRows-1) || (rand.column == 0 && rand.row == 0))
-        game.mushrooms.push({column: rand.column, row: rand.row});
+            rand = { column: getRandomIntInclusive(0, game.nbCols - 1), row: getRandomIntInclusive(0, game.nbRows - 1) };
+        } while ((rand.column == game.nbCols - 1 && rand.row == game.nbRows - 1) || (rand.column == 0 && rand.row == 0))
+        game.mushrooms.push({ column: rand.column, row: rand.row });
     }
     // remove duplicates
-    game.mushrooms = game.mushrooms.filter(function(e,i,self){
-        return self.findIndex(function(p){
-            return p.row === e.row && p.column === e.column; 
+    game.mushrooms = game.mushrooms.filter(function (e, i, self) {
+        return self.findIndex(function (p) {
+            return p.row === e.row && p.column === e.column;
         }) === i;
     })
     mushroomsCopy = game.mushrooms;
-
+    // canvas
     var canvas = document.getElementById('canvas');
     canvas.width = game.kPixelWidth;
     canvas.height = game.kPixelHeight;
     var context = canvas.getContext("2d");
     gContext = context;
-
-    drawBoard(); 
+    drawBoard();
 }
 
 function WindowLoad(event) {
